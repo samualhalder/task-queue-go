@@ -1,10 +1,15 @@
 # =========================
 # Project config
 # =========================
+include .env
+export
+
 APP_NAME=task-queue
 CMD_DIR=cmd/api
 BIN_DIR=bin
 BIN=$(BIN_DIR)/$(APP_NAME)
+MIGRATIONS_PATH=cmd/migrate/migrations
+DB_URL?=$(DB_ADDR)
 
 # =========================
 # Go settings
@@ -85,3 +90,29 @@ tidy:
 .PHONY: clean
 clean:
 	rm -rf $(BIN_DIR)
+
+MIGRATIONS_PATH=cmd/migrate/migrations
+DB_URL?=$(DATABASE_URL)
+
+.PHONY: migrate-up migrate-down migrate-force migrate-version migrate-create
+
+## Apply all up migrations
+migrate-up:
+	migrate -path=$(MIGRATIONS_PATH) -database="$(DB_URL)" up
+
+## Rollback last migration
+migrate-down:
+	migrate -path=$(MIGRATIONS_PATH) -database="$(DB_URL)" down 1
+
+## Force migration version (used when dirty)
+migrate-force:
+	migrate -path=$(MIGRATIONS_PATH) -database="$(DB_URL)" force $(v)
+
+## Show current migration version
+migrate-version:
+	migrate -path=$(MIGRATIONS_PATH) -database="$(DB_URL)" version
+
+## Create a new migration
+## usage: make migrate-create name=add_tasks_table
+migrate-create:
+	migrate create -seq -ext sql -dir $(MIGRATIONS_PATH) $(name)
