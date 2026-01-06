@@ -12,26 +12,26 @@ type TaskRepository interface{
 	GetById(context.Context,int64) (*model.Task,error)
 }
 
-type store struct{
+type Store struct{
 	db *sql.DB
 	Task TaskRepository
 }
 
-func NewStore(db *sql.DB) *store{
-	return &store{
+func NewStore(db *sql.DB) *Store{
+	return &Store{
 		db: db,
 		Task: &TaskStore{db},
 	}
 }
 
-func (s *store) ExecTx(ctx context.Context, fn func(*store) error) error {
+func (s *Store) ExecTx(ctx context.Context, fn func(*Store) error) error {
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	txStore := &store{
+	txStore := &Store{
 		db:    s.db, 
 		Task: &TaskStore{db: tx},
 	}
