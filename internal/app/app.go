@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -16,26 +16,36 @@ import (
 	"github.com/samualhalder/task-queue-go/internal/store"
 )
 
-type application struct{
-	config config
-	store *store.Store
+type Application struct{
+	Config Config
+	Store *store.Store
+	router http.Handler
 }
 
-type config struct{
-	addr string
-	dbConfig dbConfig
-	env string
+type Config struct{
+	Addr string
+	DBConfig DBConfig
+	Env string
 }
 
-type dbConfig struct{
-	addr string
-	maxOpenConn int
-	maxIdlConn int
-	maxIdlTime string
+type DBConfig struct{
+	Addr string
+	MaxOpenConn int
+	MaxIdlConn int
+	MaxIdlTime string
+}
+
+func New(cnf Config,store *store.Store) *Application{
+	app:= &Application{
+       Config: cnf,
+	   Store: store,
+	}
+	app.router=app.mount()
+	return app
 }
 
 
-func(app *application) mount() http.Handler{
+func(app *Application) mount() http.Handler{
 	r:=chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -54,43 +64,43 @@ func(app *application) mount() http.Handler{
 	}))
 
     r.Route("/api/v1",func(r chi.Router){
-
+        app.HealthCheckRoute(r)
 	})
 
 	return r
 }
 
-func(app *application) run(mux http.Handler) error {
+func(app *Application) Run() error {
 	srv:=http.Server{
-		Addr: app.config.addr,
-		Handler: mux,
+		Addr: app.Config.Addr,
+		Handler: app.router,
 		WriteTimeout: time.Second * 30,
 		ReadTimeout: time.Second * 10,
 		IdleTimeout: time.Second,
 	}
-	shutdown:=make(chan error)
+	shutdown:=make(chan error,1)
 	go func(){
-		quit:=make(chan os.Signal)
+		quit:=make(chan os.Signal,1)
 
 		signal.Notify(quit, syscall.SIGINT,syscall.SIGTERM)
-		s:= <-quit
+		 <-quit
 
 		ctx,cancel:=context.WithTimeout(context.Background(), time.Second * 5)
 		defer cancel()
-		fmt.Printf("signal caught",s.String())
+		
 		shutdown <-srv.Shutdown(ctx)
 	}()
 
 
-	fmt.Print("server is running on port " , app.config.addr)
+	fmt.Print("server is running on port " , app.Config.Addr)
 	err:=srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed){
 		return err
 	}
-	err= <-shutdown
+	err= <-shutdown 
 
 	if err!=nil{
 		return err
 	}
 	return nil
-}
+} 
