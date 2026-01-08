@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/joho/godotenv"
 	"github.com/samualhalder/task-queue-go/internal/app"
 	"github.com/samualhalder/task-queue-go/internal/db"
 	"github.com/samualhalder/task-queue-go/internal/env"
+	"github.com/samualhalder/task-queue-go/internal/logger"
 	"github.com/samualhalder/task-queue-go/internal/store"
 )
 
@@ -14,7 +13,7 @@ func main(){
 
 	err:=godotenv.Load()
 	if err!=nil{
-		fmt.Print("error while loading env")
+		panic("error while loading env")
 	}
 	
 	cnf:=app.Config{
@@ -31,14 +30,21 @@ func main(){
 	db,err:=db.New(cnf.DBConfig.Addr,cnf.DBConfig.MaxOpenConn,cnf.DBConfig.MaxIdlConn,cnf.DBConfig.MaxIdlTime)
 
 	if err!=nil{
-		fmt.Printf("error while loading database",err.Error())
-		return 
+		panic(err.Error())
 	}
 	store:=store.NewStore(db)
 
-	app:=app.New(cnf,store)
+	 logger,err:= logger.New(cnf.Env)
+	 defer logger.Sync()
+	 if err!=nil{
+		panic(err)
+	 }
+	
+
+	app:=app.New(cnf,store,logger.Sugar())
 
 	if err:=app.Run();err!=nil{
-		fmt.Print("error while running app",err)
+		panic(err)
 	}
+	
 }

@@ -1,8 +1,12 @@
 package app
 
-import "net/http"
+import (
+	"net/http"
 
-func(app *Application) HealthChecker(w  http.ResponseWriter,r *http.Request){
+	jsonresponse "github.com/samualhalder/task-queue-go/internal/json_response"
+)
+
+func(app *Application) HealthChecker(w  http.ResponseWriter,r *http.Request) {
 	
-	w.Write([]byte("its good"))
+		jsonresponse.Success(w,http.StatusOK,"done",nil)
 }

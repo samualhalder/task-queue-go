@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,12 +13,14 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/samualhalder/task-queue-go/internal/store"
+	"go.uber.org/zap"
 )
 
 type Application struct{
 	Config Config
 	Store *store.Store
 	router http.Handler
+	Logger *zap.SugaredLogger
 }
 
 type Config struct{
@@ -35,12 +36,14 @@ type DBConfig struct{
 	MaxIdlTime string
 }
 
-func New(cnf Config,store *store.Store) *Application{
+func New(cnf Config,store *store.Store,logger *zap.SugaredLogger) *Application{
 	app:= &Application{
        Config: cnf,
 	   Store: store,
+	   Logger: logger,
 	}
 	app.router=app.mount()
+	app.Logger.Info("Route is mounted")
 	return app
 }
 
@@ -92,7 +95,7 @@ func(app *Application) Run() error {
 	}()
 
 
-	fmt.Print("server is running on port " , app.Config.Addr)
+	app.Logger.Info("Server is running on port ", app.Config.Addr)
 	err:=srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed){
 		return err
