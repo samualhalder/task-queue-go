@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/redis/go-redis/v9"
 	"github.com/samualhalder/task-queue-go/internal/store"
 	"go.uber.org/zap"
 )
@@ -21,12 +22,14 @@ type Application struct{
 	Store *store.Store
 	router http.Handler
 	Logger *zap.SugaredLogger
+	Redis  *redis.Client
 }
 
 type Config struct{
 	Addr string
 	DBConfig DBConfig
 	Env string
+	RedisCnf RedisConfig
 }
 
 type DBConfig struct{
@@ -36,11 +39,19 @@ type DBConfig struct{
 	MaxIdlTime string
 }
 
-func New(cnf Config,store *store.Store,logger *zap.SugaredLogger) *Application{
+type RedisConfig struct{
+	Password string
+	Addr string
+	DB int
+	Enabled bool
+}
+
+func New(cnf Config,store *store.Store,logger *zap.SugaredLogger,rdb *redis.Client) *Application{
 	app:= &Application{
        Config: cnf,
 	   Store: store,
 	   Logger: logger,
+	   Redis: rdb,
 	}
 	app.router=app.mount()
 	app.Logger.Info("Route is mounted")
