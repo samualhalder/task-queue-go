@@ -1,18 +1,42 @@
 package model
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Task struct {
-  ID          int64
-  Type        string
-  Payload     []byte
-  Status      State
-  Attempts    int
-  MaxAttempts int
-  LockedUntil *time.Time
-  CreatedAt   time.Time
-  UpdatedAt   time.Time
+  ID   uuid.UUID `json:"id"`
+  TaskName        string `json:"task_name"`
+  Payload     json.RawMessage `json:"payload"`
+  Status      State `json:"status"`
+  Priority int `json:"priority"`
+  ScheduledAt time.Time `json:"scheduled_at"`
+  Attempts    int `json:"attempts"`
+  MaxAttempts int `json:"max_attempts"`
+  LastError    string `json:"last_error"`
+  LockedBy string `json:"locked_by"`
+  LockedAt time.Time `json:"locked_at"`
+  CreatedAt   time.Time `json:"created_at"`
+  UpdatedAt   time.Time  `json:"updated_at"`
 }
+
+
+// 1	id	uuid	NULL	NULL	NULL	NULL	NO	gen_random_uuid()	 	
+// 2	task_name	text	NULL	NULL	NULL	NULL	NO	NULL	 	
+// 3	payload	jsonb	NULL	NULL	NULL	NULL	NO	NULL	 	
+// 4	status	text	NULL	NULL	NULL	NULL	NO	'pending'::text	 	
+// 5	priority	int2	16	NULL	0	NULL	NO	0	 	
+// 6	scheduled_at	timestamptz	NULL	6	NULL	NULL	NO	now()	 	
+// 7	attempts	int4	32	NULL	0	NULL	NO	0	 	
+// 8	max_attempts	int4	32	NULL	0	NULL	NO	3	 	
+// 9	last_error	text	NULL	NULL	NULL	NULL	YES	NULL	 	
+// 10	locked_by	text	NULL	NULL	NULL	NULL	YES	NULL	 	
+// 11	locked_at	timestamptz	NULL	6	NULL	NULL	YES	NULL	 	
+// 12	created_at	timestamptz	NULL	6	NULL	NULL	NO	now()	 	
+// 13	updated_at	timestamptz	NULL	6	NULL	NULL	NO	now()	 	
 
 type State string 
 

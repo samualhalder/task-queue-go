@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/samualhalder/task-queue-go/internal/dto"
 	"github.com/samualhalder/task-queue-go/internal/model"
 )
 
 type TaskRepository interface{
 	GetById(context.Context,int64) (*model.Task,error)
+	Create(context.Context,*dto.TaskResponse) error
 }
 
 type Store struct{

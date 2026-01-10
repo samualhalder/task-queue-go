@@ -3,7 +3,15 @@ package jsonresponse
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 )
+
+var Validator * validator.Validate
+
+func init(){
+	Validator= validator.New(validator.WithRequiredStructEnabled())
+}
 
 func writeJson(w http.ResponseWriter,status int,data any)error{
 	w.Header().Set("Content-Type","application/json")
@@ -11,11 +19,11 @@ func writeJson(w http.ResponseWriter,status int,data any)error{
 	return json.NewEncoder(w).Encode(data)
 }
 
-func readJson(w http.ResponseWriter,r *http.Request,data any) error{
+func ReadJson(w http.ResponseWriter,r *http.Request,data any) error{
 	maxBytes:= 1_048_578
 	r.Body=http.MaxBytesReader(w,r.Body,int64(maxBytes))
 	decoder:= json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
+	// decoder.DisallowUnknownFields()
 	return decoder.Decode(data)
 }
 

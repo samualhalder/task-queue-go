@@ -58,7 +58,6 @@ func New(cnf Config,store *store.Store,logger *zap.SugaredLogger,rdb *redis.Clie
 	return app
 }
 
-
 func(app *Application) mount() http.Handler{
 	r:=chi.NewRouter()
 
@@ -79,6 +78,7 @@ func(app *Application) mount() http.Handler{
 
     r.Route("/api/v1",func(r chi.Router){
         app.HealthCheckRoute(r)
+		app.taskRoute(r)
 	})
 
 	return r
@@ -118,3 +118,4 @@ func(app *Application) Run() error {
 	}
 	return nil
 } 
+
