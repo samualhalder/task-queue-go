@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/redis/go-redis/v9"
+	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/store"
 	"go.uber.org/zap"
 )
@@ -22,7 +22,7 @@ type Application struct{
 	Store *store.Store
 	router http.Handler
 	Logger *zap.SugaredLogger
-	Redis  *redis.Client
+	Queue   queue.Queue
 }
 
 type Config struct{
@@ -46,12 +46,12 @@ type RedisConfig struct{
 	Enabled bool
 }
 
-func New(cnf Config,store *store.Store,logger *zap.SugaredLogger,rdb *redis.Client) *Application{
+func New(cnf Config,store *store.Store,logger *zap.SugaredLogger,queue queue.Queue) *Application{
 	app:= &Application{
        Config: cnf,
 	   Store: store,
 	   Logger: logger,
-	   Redis: rdb,
+	   Queue: queue,
 	}
 	app.router=app.mount()
 	app.Logger.Info("Route is mounted")

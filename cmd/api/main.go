@@ -6,6 +6,7 @@ import (
 	"github.com/samualhalder/task-queue-go/internal/db"
 	"github.com/samualhalder/task-queue-go/internal/env"
 	"github.com/samualhalder/task-queue-go/internal/logger"
+	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/redis"
 	"github.com/samualhalder/task-queue-go/internal/store"
 )
@@ -49,8 +50,9 @@ func main(){
 
 	 
 	rdb:=redis.New(cnf.RedisCnf.Password,cnf.RedisCnf.Addr,cnf.RedisCnf.DB)
+	taskQueue:= queue.NewRedisQueue(rdb,"queue:tasks:default")
 
-	app:=app.New(cnf,store,logger.Sugar(),rdb)
+	app:=app.New(cnf,store,logger.Sugar(),taskQueue)
 
 	if err:=app.Run();err!=nil{
 		panic(err)
