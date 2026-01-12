@@ -2,7 +2,10 @@ package store
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
+	"github.com/google/uuid"
 	"github.com/samualhalder/task-queue-go/internal/dto"
 	"github.com/samualhalder/task-queue-go/internal/model"
 )
@@ -12,10 +15,38 @@ type TaskStore struct{
 	db DBTX
 }
 
-func(t *TaskStore) GetById(ctx context.Context,id int64) (*model.Task,error){
-	print("task id ", id)
-	return nil,nil
+func (t *TaskStore) GetById(ctx context.Context, id uuid.UUID) (*model.Task, error) {
+	query := `
+	SELECT
+		id, task_name, status, attempts, max_attempts,
+		locked_by, locked_at, created_at, updated_at
+	FROM tasks
+	WHERE id = $1
+	`
+
+	task := &model.Task{}
+	err := t.db.QueryRowContext(ctx, query, id).Scan(
+		&task.ID,
+		&task.TaskName,
+		&task.Status,
+		&task.Attempts,
+		&task.MaxAttempts,
+		&task.LockedBy,
+		&task.LockedAt,
+		&task.CreatedAt,
+		&task.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return task, nil
 }
+
 	
 
 func(t *TaskStore) Create(ctx context.Context,task *dto.TaskResponse) error{
@@ -27,4 +58,48 @@ func(t *TaskStore) Create(ctx context.Context,task *dto.TaskResponse) error{
 		return err
 	}
 	return nil
+}
+
+func (t *TaskStore) FailedExecution(ctx context.Context, taskID uuid.UUID) (bool, error) {
+	query := `
+	UPDATE tasks
+	SET
+		attempts = attempts + 1,
+		locked_by = NULL,
+		locked_at = NULL,
+		status = CASE
+			WHEN attempts + 1 >= max_attempts THEN 'failed'
+			ELSE 'pending'
+		END
+	WHERE id = $1
+	RETURNING attempts < max_attempts
+	`
+
+	var retry bool
+	err := t.db.QueryRowContext(ctx, query, taskID).Scan(&retry)
+	return retry, err
+}
+
+func(t *TaskStore) SuccessfullExecution(ctx context.Context,task *model.Task) (error){
+	query:=`UPDATE tasks SET attempts= attempts+1,locked_by=NULL,locked_at=NULL,status='completed' WHERE id=$1`
+	
+	_,err:=t.db.ExecContext(ctx,query,task.ID)
+	if err!=nil{
+		return err
+	}
+	return nil
+}
+
+func(t *TaskStore) ClaimTask(ctx context.Context,taskId uuid.UUID,workerId string) (bool,error){
+	query:=`UPDATE tasks SET locked_by=$1,status='running',locked_at=NOW() WHERE id=$2 AND locked_by IS NULL AND status='pending'`
+	res,err:=t.db.ExecContext(ctx,query,workerId,taskId)
+	if err!=nil{
+		return false,err
+	}
+	effRows,err:=res.RowsAffected()
+	if  err!=nil{
+		return false,err
+	}
+
+	return effRows==1,nil
 }
