@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/samualhalder/task-queue-go/internal/dto"
@@ -16,6 +17,7 @@ type TaskRepository interface{
 	FailedExecution(context.Context,uuid.UUID) (bool,error)
 	SuccessfullExecution(ctx context.Context,task *model.Task) error
 	ClaimTask(ctx context.Context,taskId uuid.UUID,workerId string) (bool,error)
+	FetchStuckTasks(context.Context,time.Duration) ([]uuid.UUID,error)
 }
 
 type Store struct{

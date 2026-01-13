@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/samualhalder/task-queue-go/internal/dto"
@@ -71,7 +72,7 @@ func (t *TaskStore) FailedExecution(ctx context.Context, taskID uuid.UUID) (bool
 			WHEN attempts + 1 >= max_attempts THEN 'failed'
 			ELSE 'pending'
 		END
-	WHERE id = $1
+	WHERE id = $1 status = 'running'
 	RETURNING attempts < max_attempts
 	`
 
@@ -81,7 +82,7 @@ func (t *TaskStore) FailedExecution(ctx context.Context, taskID uuid.UUID) (bool
 }
 
 func(t *TaskStore) SuccessfullExecution(ctx context.Context,task *model.Task) (error){
-	query:=`UPDATE tasks SET attempts= attempts+1,locked_by=NULL,locked_at=NULL,status='completed' WHERE id=$1`
+	query:=`UPDATE tasks SET attempts= attempts+1,locked_by=NULL,locked_at=NULL,status='completed' WHERE id=$1 AND status='running'`
 	
 	_,err:=t.db.ExecContext(ctx,query,task.ID)
 	if err!=nil{
@@ -102,4 +103,38 @@ func(t *TaskStore) ClaimTask(ctx context.Context,taskId uuid.UUID,workerId strin
 	}
 
 	return effRows==1,nil
+}
+
+func(t *TaskStore) FetchStuckTasks(ctx context.Context,timeout time.Duration) ([]uuid.UUID,error){
+	query:= `UPDATE tasks
+    SET
+        attempts = attempts + 1,
+        locked_by = NULL,
+        locked_at = NULL,
+        status = CASE
+            WHEN attempts + 1 >= max_attempts THEN 'failed'
+            ELSE 'pending'
+        END
+    WHERE status = 'running'
+      AND locked_at < now() - $1::interval
+    RETURNING id;
+    `
+
+	rows,err:=t.db.QueryContext(ctx,query,timeout.String())
+	if err!=nil{
+		return nil,err
+	}
+	defer rows.Close()
+	var ids=make([]uuid.UUID,0)
+	for rows.Next(){
+		var id uuid.UUID
+		if err:=rows.Scan(&id);err!=nil{
+			return nil,err
+		}
+		ids = append(ids, id)
+	}
+	if err:=rows.Err();err!=nil{
+		return nil,err
+	}
+	return ids,nil
 }
