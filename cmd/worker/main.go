@@ -4,11 +4,14 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/samualhalder/task-queue-go/internal/app"
 	"github.com/samualhalder/task-queue-go/internal/db"
 	"github.com/samualhalder/task-queue-go/internal/env"
+	"github.com/samualhalder/task-queue-go/internal/janitor"
 	"github.com/samualhalder/task-queue-go/internal/logger"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/redis"
@@ -36,6 +39,7 @@ func main(){
 			DB: env.Int("REDIS_DB",0),
 			Enabled: env.Bool("REDIS_ENABLED",true),
 		},
+		WorkersCount: env.Int("WORKERS_COUNT",5),
 	}
 
 	db,err:=db.New(cnf.DBConfig.Addr,cnf.DBConfig.MaxOpenConn,cnf.DBConfig.MaxIdlConn,cnf.DBConfig.MaxIdlTime)
@@ -55,12 +59,27 @@ func main(){
 	rdb:=redis.New(cnf.RedisCnf.Password,cnf.RedisCnf.Addr,cnf.RedisCnf.DB)
 	taskQueue:= queue.NewRedisQueue(rdb,"queue:tasks:default")
 
-	worker:= worker.NewWorker(0,taskQueue,store.Task,nil,logger.Sugar())
+	 pool:=worker.NewPool(cnf.WorkersCount,logger.Sugar(),taskQueue,store.Task,nil)
+	 
+	 ctx,stop:= signal.NotifyContext(context.Background(),os.Interrupt,syscall.SIGTERM)
+	 defer stop()
+	 pool.Start(ctx)
 
-	ctx,stop:= signal.NotifyContext(context.Background(),os.Interrupt)
-	defer stop()
+	 logger.Info("pool is started")
 
-	worker.Start(ctx)
+	  janitor := janitor.NewJanitor(
+        store.Task,
+        taskQueue,
+        time.Minute,
+        2*time.Minute,
+        logger.Sugar(),
+    )
+    go janitor.Start(ctx)
+
+	logger.Info("janitor is started")
+
+	 <-ctx.Done()
+
 }
 
 

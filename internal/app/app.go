@@ -29,6 +29,7 @@ type Config struct{
 	Addr string
 	DBConfig DBConfig
 	Env string
+	WorkersCount int
 	RedisCnf RedisConfig
 }
 
