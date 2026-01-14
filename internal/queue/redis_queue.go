@@ -26,6 +26,7 @@ func(r *RedisQueue) Push(ctx context.Context,uuid uuid.UUID) error{
 }
 
 func(r *RedisQueue) Pop(ctx context.Context) (uuid.UUID,error){
+	// fmt.Print("queue is poping ")
 	res,err:= r.rdb.BLPop(ctx,0,r.key).Result()
 	if err!=nil{
 		return uuid.Nil,err

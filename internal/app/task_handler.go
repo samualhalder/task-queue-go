@@ -40,6 +40,11 @@ func(app *Application) CreateTask(w http.ResponseWriter,r *http.Request){
 		return
 	}
 
+	if err:=app.Queue.Push(ctx,task.ID); err!=nil{
+		app.internalServerError(w,r,err)
+		return
+	}
+
 	if err:=jsonresponse.Success(w,http.StatusCreated,"task created successfully",task); err!=nil{
 		app.internalServerError(w,r,err)
 		return

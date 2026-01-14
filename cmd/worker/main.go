@@ -1,4 +1,4 @@
-package worker_main
+package main
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func main(){
 	if err!=nil{
 		panic("error while loading env in worker")
 	}
-	
+
 	cnf:=app.Config{
 		DBConfig: app.DBConfig{
 			Addr: env.String("DB_ADDR",""),
@@ -59,13 +59,15 @@ func main(){
 	rdb:=redis.New(cnf.RedisCnf.Password,cnf.RedisCnf.Addr,cnf.RedisCnf.DB)
 	taskQueue:= queue.NewRedisQueue(rdb,"queue:tasks:default")
 
-	 pool:=worker.NewPool(cnf.WorkersCount,logger.Sugar(),taskQueue,store.Task,nil)
+	workExec:= worker.NewWorkerExec(*logger.Sugar())
+	 
+	 pool:=worker.NewPool(cnf.WorkersCount,logger.Sugar(),taskQueue,store.Task,workExec)
 	 
 	 ctx,stop:= signal.NotifyContext(context.Background(),os.Interrupt,syscall.SIGTERM)
 	 defer stop()
 	 pool.Start(ctx)
 
-	 logger.Info("pool is started")
+	 logger.Info("pool has started")
 
 	  janitor := janitor.NewJanitor(
         store.Task,
@@ -76,7 +78,7 @@ func main(){
     )
     go janitor.Start(ctx)
 
-	logger.Info("janitor is started")
+	logger.Info("janitor has started")
 
 	 <-ctx.Done()
 

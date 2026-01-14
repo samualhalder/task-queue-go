@@ -44,7 +44,7 @@ run:
 # =========================
 .PHONY: dev
 dev:
-	air
+	air -c .air.api.toml & air -c .air.worker.toml
 echo:
 	echo "hello"
 

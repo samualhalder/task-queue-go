@@ -16,9 +16,9 @@ type Task struct {
   ScheduledAt time.Time `json:"scheduled_at"`
   Attempts    int `json:"attempts"`
   MaxAttempts int `json:"max_attempts"`
-  LastError    string `json:"last_error"`
-  LockedBy string `json:"locked_by"`
-  LockedAt time.Time `json:"locked_at"`
+  LastError    *string `json:"last_error"`
+  LockedBy *string `json:"locked_by"`
+  LockedAt *time.Time `json:"locked_at"`
   CreatedAt   time.Time `json:"created_at"`
   UpdatedAt   time.Time  `json:"updated_at"`
 }

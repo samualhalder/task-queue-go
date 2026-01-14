@@ -39,6 +39,7 @@ func(w *Worker) Start(ctx context.Context) {
     for{
         select {
         case <- ctx.Done():
+			w.logger.Infof("worker %d is stopped ",w.id)
             return 
         default :
           w.processOnce(ctx)
@@ -47,20 +48,25 @@ func(w *Worker) Start(ctx context.Context) {
 }
 
 func (w *Worker) processOnce(ctx context.Context) {
+	w.logger.Infof("worker %d is processing a task", w.id)
 	taskID, err := w.queue.Pop(ctx)
 	if err != nil {
-		time.Sleep(500 * time.Millisecond)
 		w.logger.Errorw("queue pop failed", "error", err)
+		time.Sleep(500 * time.Millisecond)
 		return
 	}
+	w.logger.Info("run line")
+
 
 	task, err := w.tasks.GetById(ctx, taskID)
 	if err != nil || task == nil {
+		w.logger.Errorf("error while feting task","error", err.Error())
 		return
 	}
 
 	claimed, err := w.tasks.ClaimTask(ctx, taskID, strconv.Itoa(w.id))
 	if err != nil || !claimed {
+		w.logger.Errorf("error while claiming task","error", err.Error())
 		return
 	}
 
