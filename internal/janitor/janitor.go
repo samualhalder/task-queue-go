@@ -51,6 +51,7 @@ func (j *Janitor) Start(ctx context.Context){
 func(j *Janitor) runOnce(ctx context.Context){
 
 	// TODO: pull task from bd need a method in task to do that
+	j.logger.Infof("running janitor")
 	ids,err:=j.tasks.FetchStuckTasks(ctx,j.timeout)
 	if err!=nil{
 		j.logger.Errorw("failed to fetch stuck tasks from db","error",err)

@@ -37,6 +37,7 @@ func NewWorker(
 func(w *Worker) Start(ctx context.Context) {
 	w.logger.Infof("Worker %d is started ",w.id)
     for{
+		w.logger.Infof("Worker %d is running ",w.id)
         select {
         case <- ctx.Done():
 			w.logger.Infof("worker %d is stopped ",w.id)
@@ -55,8 +56,6 @@ func (w *Worker) processOnce(ctx context.Context) {
 		time.Sleep(500 * time.Millisecond)
 		return
 	}
-	w.logger.Info("run line")
-
 
 	task, err := w.tasks.GetById(ctx, taskID)
 	if err != nil || task == nil {
@@ -77,6 +76,7 @@ func (w *Worker) processOnce(ctx context.Context) {
 	}()
 
 	if err := w.executor.Execute(ctx, task); err != nil {
+		w.logger.Errorf("failed to execute task",err.Error())
 		retry, err2 := w.tasks.FailedExecution(ctx, task.ID)
 		if err2 != nil {
 			w.logger.Errorw("failed to mark task failed", "error", err2)

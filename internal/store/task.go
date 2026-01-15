@@ -72,7 +72,7 @@ func (t *TaskStore) FailedExecution(ctx context.Context, taskID uuid.UUID) (bool
 			WHEN attempts + 1 >= max_attempts THEN 'failed'
 			ELSE 'pending'
 		END
-	WHERE id = $1 status = 'running'
+	WHERE id = $1 AND status = 'running'
 	RETURNING attempts < max_attempts
 	`
 
