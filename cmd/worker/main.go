@@ -16,6 +16,7 @@ import (
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/redis"
 	"github.com/samualhalder/task-queue-go/internal/store"
+	taskexecutor "github.com/samualhalder/task-queue-go/internal/task_executor"
 	"github.com/samualhalder/task-queue-go/internal/worker"
 )
 
@@ -58,10 +59,16 @@ func main(){
 	 
 	rdb:=redis.New(cnf.RedisCnf.Password,cnf.RedisCnf.Addr,cnf.RedisCnf.DB)
 	taskQueue:= queue.NewRedisQueue(rdb,"queue:tasks:default")
+	
 
-	workExec:= worker.NewWorkerExec(*logger.Sugar())
+	taskRegsitry:=taskexecutor.NewRegistry()
+
+	taskExec:= &taskexecutor.TaskExecutor{
+		Handlers: taskRegsitry,
+		Logger: logger.Sugar(),
+	}
 	 
-	 pool:=worker.NewPool(cnf.WorkersCount,logger.Sugar(),taskQueue,store.Task,workExec)
+	 pool:=worker.NewPool(cnf.WorkersCount,logger.Sugar(),taskQueue,store.Task,taskExec)
 	 
 	 ctx,stop:= signal.NotifyContext(context.Background(),os.Interrupt,syscall.SIGTERM)
 	 defer stop()
