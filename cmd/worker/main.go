@@ -13,10 +13,12 @@ import (
 	"github.com/samualhalder/task-queue-go/internal/env"
 	"github.com/samualhalder/task-queue-go/internal/janitor"
 	"github.com/samualhalder/task-queue-go/internal/logger"
+	"github.com/samualhalder/task-queue-go/internal/mailer"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/redis"
 	"github.com/samualhalder/task-queue-go/internal/store"
 	taskexecutor "github.com/samualhalder/task-queue-go/internal/task_executor"
+	taskhandler "github.com/samualhalder/task-queue-go/internal/task_handler"
 	"github.com/samualhalder/task-queue-go/internal/worker"
 )
 
@@ -62,6 +64,11 @@ func main(){
 	
 
 	taskRegsitry:=taskexecutor.NewRegistry()
+
+	taskRegsitry.Register("MAIL", &taskhandler.MailHandler{
+		Logger: logger.Sugar(),
+		Mail: mailer.NewSendGrid("",""),
+	})
 
 	taskExec:= &taskexecutor.TaskExecutor{
 		Handlers: taskRegsitry,
