@@ -10,8 +10,10 @@ func NewRegistry() Registry {
 }
 
 func(r Registry) Register(taskType string, h taskhandler.TaskHandler) {
+	
 	if _,exists:=r[taskType];exists{
 		panic("duplicate task handler" + taskType)
 	}
 	r[taskType]=h
 }
+

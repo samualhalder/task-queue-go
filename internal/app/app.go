@@ -31,6 +31,7 @@ type Config struct{
 	Env string
 	WorkersCount int
 	RedisCnf RedisConfig
+	EmailCnf EmailConfig
 }
 
 type DBConfig struct{
@@ -45,6 +46,11 @@ type RedisConfig struct{
 	Addr string
 	DB int
 	Enabled bool
+}
+
+type EmailConfig struct{
+	ApiKey string
+	From string
 }
 
 func New(cnf Config,store *store.Store,logger *zap.SugaredLogger,queue queue.Queue) *Application{

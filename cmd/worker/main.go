@@ -43,6 +43,10 @@ func main(){
 			Enabled: env.Bool("REDIS_ENABLED",true),
 		},
 		WorkersCount: env.Int("WORKERS_COUNT",5),
+		EmailCnf: app.EmailConfig{
+			ApiKey: env.String("RESEND_API_KEY",""),
+			From:env.String("RESEND_FROM","Acme <onboarding@resend.dev>"),
+		},
 	}
 
 	db,err:=db.New(cnf.DBConfig.Addr,cnf.DBConfig.MaxOpenConn,cnf.DBConfig.MaxIdlConn,cnf.DBConfig.MaxIdlTime)
@@ -65,9 +69,11 @@ func main(){
 
 	taskRegsitry:=taskexecutor.NewRegistry()
 
+
+	// TODO: regester resend
 	taskRegsitry.Register("MAIL", &taskhandler.MailHandler{
 		Logger: logger.Sugar(),
-		Mail: mailer.NewSendGrid("",""),
+		Mail: mailer.NewResendMailer(cnf.EmailCnf.ApiKey,cnf.EmailCnf.From),
 	})
 
 	taskExec:= &taskexecutor.TaskExecutor{

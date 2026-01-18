@@ -15,12 +15,9 @@ type TaskExecutor struct{
 }
 
 func(t *TaskExecutor) Execute(ctx context.Context,task *model.Task) error{
-	// TODO: fetch task usign a task handler map
 	handler,ok:=t.Handlers[task.TaskName]
 	if !ok{
-		return fmt.Errorf("no task of type: ", task.TaskName)
+		return fmt.Errorf("no task of type: %s", task.TaskName)
 	}
-
-	// TODO: return the taskHandler.handle 
 	return handler.Handle(ctx,task)
 }

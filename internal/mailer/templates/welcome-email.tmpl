@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f6f9fc;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        color: #333333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      .header {
+        background-color: #4f46e5;
+        padding: 24px;
+        text-align: center;
+        color: #ffffff;
+      }
+      .content {
+        padding: 32px;
+      }
+      .content h1 {
+        margin-top: 0;
+        font-size: 24px;
+      }
+      .content p {
+        line-height: 1.6;
+        font-size: 16px;
+      }
+      .button {
+        display: inline-block;
+        margin-top: 24px;
+        padding: 12px 20px;
+        background-color: #4f46e5;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+      }
+      .footer {
+        padding: 20px;
+        font-size: 13px;
+        color: #777777;
+        text-align: center;
+        background-color: #fafafa;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Welcome to {{.app_name}}</h2>
+      </div>
+
+      <div class="content">
+        <h1>Hello {{.name}} 👋</h1>
+
+        <p>
+          We’re excited to have you on board at <strong>{{.app_name}}</strong>.
+          Your account has been successfully created, and you’re all set to get
+          started.
+        </p>
+
+        <p>
+          Click the button below to explore your dashboard and begin your
+          journey with us.
+        </p>
+
+        <a href="{{.login_url}}" class="button">Get Started</a>
+
+        <p style="margin-top: 32px;">
+          If you have any questions, just reply to this email — we’re always
+          happy to help.
+        </p>
+
+        <p>
+          Cheers,<br />
+          The {{.app_name}} Team
+        </p>
+      </div>
+
+      <div class="footer">
+        © {{.year}} {{.app_name}}. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>

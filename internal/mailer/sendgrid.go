@@ -2,7 +2,6 @@ package mailer
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 
 	"github.com/sendgrid/sendgrid-go"
@@ -60,6 +59,6 @@ func (s *SendGridMailer) Send(templateFile, username, email string, data any, is
 		log.Print("result", res)
 		return nil
 	}
-	fmt.Errorf("failed to send email after %d attempts", MaxRetries)
+	// fmt.Errorf("failed to send email after %d attempts", MaxRetries)
 	return nil
 }
