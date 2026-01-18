@@ -19,7 +19,7 @@ type TaskStore struct{
 func (t *TaskStore) GetById(ctx context.Context, id uuid.UUID) (*model.Task, error) {
 	query := `
 	SELECT
-		id, task_name, status, attempts, max_attempts,
+		id, task_name,payload, status, attempts, max_attempts,
 		locked_by, locked_at, created_at, updated_at
 	FROM tasks
 	WHERE id = $1
@@ -29,6 +29,7 @@ func (t *TaskStore) GetById(ctx context.Context, id uuid.UUID) (*model.Task, err
 	err := t.db.QueryRowContext(ctx, query, id).Scan(
 		&task.ID,
 		&task.TaskName,
+		&task.Payload,
 		&task.Status,
 		&task.Attempts,
 		&task.MaxAttempts,

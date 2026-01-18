@@ -23,6 +23,7 @@ func (m *MailHandler) Handle(ctx context.Context, task *model.Task) error {
 	var dataPayload model.SendMailTemplate
 
 	// 1. Decode payload
+
 	if err := json.Unmarshal(task.Payload, &dataPayload); err != nil {
 		return fmt.Errorf("invalid send-mail payload: %w", err)
 	}
@@ -30,7 +31,7 @@ func (m *MailHandler) Handle(ctx context.Context, task *model.Task) error {
 	// 2. Load template
 	tmpl, err := template.ParseFS(
 		mailer.FS,
-		"templates/"+dataPayload.Template,
+		"templates/"+dataPayload.Template +".tmpl",
 	)
 	if err != nil {
 		return fmt.Errorf("no such template present: %w", err)
