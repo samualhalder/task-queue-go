@@ -81,7 +81,7 @@ func main(){
 		Logger: logger.Sugar(),
 	}
 	 
-	 pool:=worker.NewPool(cnf.WorkersCount,logger.Sugar(),taskQueue,store.Task,taskExec)
+	 pool:=worker.NewPool(cnf.WorkersCount,logger.Sugar(),taskQueue,*store,taskExec)
 	 
 	 ctx,stop:= signal.NotifyContext(context.Background(),os.Interrupt,syscall.SIGTERM)
 	 defer stop()

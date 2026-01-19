@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -27,8 +28,11 @@ func(r *RedisQueue) Push(ctx context.Context,uuid uuid.UUID) error{
 
 func(r *RedisQueue) Pop(ctx context.Context) (uuid.UUID,error){
 	// fmt.Print("queue is poping ")
-	res,err:= r.rdb.BLPop(ctx,0,r.key).Result()
+	res,err:= r.rdb.BLPop(ctx,1 * time.Second,r.key).Result()
 	if err!=nil{
+		if err== redis.Nil{
+			return uuid.Nil,nil
+		}
 		return uuid.Nil,err
 	}
 	UUID,err:=uuid.Parse(res[1])

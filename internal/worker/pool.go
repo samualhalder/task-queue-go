@@ -14,17 +14,17 @@ type Pool struct{
 	Workers []*Worker
 	logger *zap.SugaredLogger
 	queue queue.Queue
-    tasks store.TaskRepository
+    store store.Store
     exec Executor
 }
 
 
-func NewPool(workerCount int,logger *zap.SugaredLogger,queue queue.Queue,tasks store.TaskRepository,exec Executor) *Pool{
+func NewPool(workerCount int,logger *zap.SugaredLogger,queue queue.Queue,store store.Store,exec Executor) *Pool{
 	return &Pool{
 		WorkerCount: workerCount,
 		logger: logger,
 		queue: queue,
-		tasks: tasks,
+		store: store,
 		exec: exec,
 	}
 }
@@ -32,7 +32,7 @@ func NewPool(workerCount int,logger *zap.SugaredLogger,queue queue.Queue,tasks s
 func(p *Pool) Start(ctx context.Context){
 	p.Workers = make([]*Worker,0,p.WorkerCount)
 	for i:=0 ; i<p.WorkerCount;i++{
-		worker:=NewWorker(i,p.queue,p.tasks,p.exec,p.logger)
+		worker:=NewWorker(i,p.queue,p.store,p.exec,p.logger)
 		
 		p.Workers = append(p.Workers, worker)
 		go worker.Start(ctx)

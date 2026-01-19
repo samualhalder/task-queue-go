@@ -11,23 +11,24 @@ import (
 	"github.com/samualhalder/task-queue-go/internal/model"
 )
 
-type TaskRepository interface{
-	GetById(context.Context,uuid.UUID) (*model.Task,error)
-	Create(context.Context,*dto.TaskResponse) error
-	FailedExecution(context.Context,uuid.UUID) (bool,error)
-	SuccessfullExecution(ctx context.Context,task *model.Task) error
-	ClaimTask(ctx context.Context,taskId uuid.UUID,workerId string) (bool,error)
-	FetchStuckTasks(context.Context,time.Duration) ([]uuid.UUID,error)
+type TaskRepository interface {
+	GetById(context.Context, uuid.UUID) (*model.Task, error)
+	Create(context.Context, *dto.TaskResponse) error
+	FailedExecution(context.Context, uuid.UUID) (bool, error)
+	SuccessfullExecution(ctx context.Context, task *model.Task) error
+	ClaimTask(ctx context.Context, taskId uuid.UUID, workerId string) (bool, error)
+	FetchStuckTasks(context.Context, time.Duration) ([]uuid.UUID, error)
+	GetAndClaimEligibleTask(ctx context.Context, workerID string) (*model.Task, error)
 }
 
-type Store struct{
-	db *sql.DB
+type Store struct {
+	db   *sql.DB
 	Task TaskRepository
 }
 
-func NewStore(db *sql.DB) *Store{
+func NewStore(db *sql.DB) *Store {
 	return &Store{
-		db: db,
+		db:   db,
 		Task: &TaskStore{db},
 	}
 }
@@ -40,7 +41,7 @@ func (s *Store) ExecTx(ctx context.Context, fn func(*Store) error) error {
 	}
 
 	txStore := &Store{
-		db:    s.db, 
+		db:   s.db,
 		Task: &TaskStore{db: tx},
 	}
 
