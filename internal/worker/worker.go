@@ -38,7 +38,7 @@ func NewWorker(
 
 func (w *Worker) Start(ctx context.Context) {
 	w.logger.Infof("Worker %d is started ", w.id)
-	ticker := time.NewTicker(w.interval)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	for {
 		select {

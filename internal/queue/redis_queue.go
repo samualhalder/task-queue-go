@@ -8,36 +8,34 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-
-
-type RedisQueue struct{
+type RedisQueue struct {
 	rdb *redis.Client
 	key string
 }
 
-func NewRedisQueue(rdb *redis.Client,key string) *RedisQueue{
+func NewRedisQueue(rdb *redis.Client, key string) *RedisQueue {
 	return &RedisQueue{
-		rdb:rdb,
-		key:key,
+		rdb: rdb,
+		key: key,
 	}
 }
 
-func(r *RedisQueue) Push(ctx context.Context,uuid uuid.UUID) error{
-	return r.rdb.RPush(ctx,r.key,uuid.String()).Err()
+func (r *RedisQueue) Signal(ctx context.Context) error {
+	return r.rdb.RPush(ctx, r.key, "signal").Err()
 }
 
-func(r *RedisQueue) Pop(ctx context.Context) (uuid.UUID,error){
+func (r *RedisQueue) Pop(ctx context.Context) (uuid.UUID, error) {
 	// fmt.Print("queue is poping ")
-	res,err:= r.rdb.BLPop(ctx,1 * time.Second,r.key).Result()
-	if err!=nil{
-		if err== redis.Nil{
-			return uuid.Nil,nil
+	res, err := r.rdb.BLPop(ctx, 1*time.Second, r.key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return uuid.Nil, nil
 		}
-		return uuid.Nil,err
+		return uuid.Nil, err
 	}
-	UUID,err:=uuid.Parse(res[1])
-	if err!=nil{
-		return uuid.Nil,err
+	UUID, err := uuid.Parse(res[1])
+	if err != nil {
+		return uuid.Nil, err
 	}
-	return UUID,nil
+	return UUID, nil
 }

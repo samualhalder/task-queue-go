@@ -111,8 +111,10 @@ func (t *TaskStore) FetchStuckTasks(ctx context.Context, timeout time.Duration) 
         attempts = attempts + 1,
         locked_by = NULL,
         locked_at = NULL,
+		next_attempt=now(),
+		last_error='worker crashed',
         status = CASE
-            WHEN attempts + 1 >= max_attempts THEN 'failed'
+            WHEN attempts + 1 >= max_attempts THEN 'canceled'
             ELSE 'pending'
         END
     WHERE status = 'running'
