@@ -71,11 +71,15 @@ func (w *Worker) processOnce(ctx context.Context) {
 	if err != nil || task == nil {
 		return
 	}
-	
+
 	if err := w.executor.Execute(ctx, task); err != nil {
 
-		w.store.Task.HandleFailure(ctx, task, err.Error())
+		w.store.ExecTx(ctx, func(txStore *store.Store) error {
+			return w.store.Task.HandleFailure(ctx, task, err.Error())
+		})
 		return
 	}
-	w.store.Task.HandleSuccess(ctx, task)
+	w.store.ExecTx(ctx, func(txStore *store.Store) error {
+		return w.store.Task.HandleSuccess(ctx, task)
+	})
 }
