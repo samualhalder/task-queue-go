@@ -19,6 +19,8 @@ type TaskRepository interface {
 	ClaimTask(ctx context.Context, taskId uuid.UUID, workerId string) (bool, error)
 	FetchStuckTasks(context.Context, time.Duration) ([]uuid.UUID, error)
 	GetAndClaimEligibleTask(ctx context.Context, workerID string) (*model.Task, error)
+	HandleFailure(ctx context.Context, task *model.Task, errorType string) error
+	HandleSuccess(ctx context.Context, task *model.Task) error
 }
 
 type Store struct {

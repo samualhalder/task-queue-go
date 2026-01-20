@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/samualhalder/task-queue-go/internal/dto"
 	"github.com/samualhalder/task-queue-go/internal/model"
+	"github.com/samualhalder/task-queue-go/internal/retries"
 )
 
 type TaskStore struct {
@@ -185,7 +186,7 @@ func (t *TaskStore) GetAndClaimEligibleTask(
 	// Claim immediately (same transaction)
 	_, err = t.db.ExecContext(ctx, `
 		UPDATE tasks
-		SET status = 'processing',
+		SET status = 'running',
 		    locked_by = $1,
 		    locked_at = NOW(),
 		    updated_at = NOW()
@@ -197,4 +198,44 @@ func (t *TaskStore) GetAndClaimEligibleTask(
 	}
 
 	return task, nil
+}
+
+func (t *TaskStore) HandleFailure(ctx context.Context, task *model.Task, errorType string) error {
+	next_attemt_time := retries.Interval(task.Attempts)
+	query := `UPDATE tasks 
+				SET 
+				   attempts=attempts+1,
+				   locked_by=NULL,
+				   locked_at=NULL,
+				   last_error=$3,
+				   next_attempt= now() + $2::interval,
+				   status = CASE
+				   		WHEN attempts+1>=max_attempts THEN 'canceled'
+						ELSE 'pending'
+						END
+				WHERE
+					id=$1`
+
+	row := t.db.QueryRowContext(ctx, query, task.ID, next_attemt_time, errorType)
+	if row.Err() == sql.ErrNoRows {
+		return row.Err()
+	}
+
+	return nil
+}
+func (t *TaskStore) HandleSuccess(ctx context.Context, task *model.Task) error {
+	query := `UPDATE tasks 
+				SET 
+				   locked_by=NULL,
+				   locked_at=NULL,
+				   status = 'completed'
+				WHERE
+					id=$1`
+
+	_, err := t.db.ExecContext(ctx, query, task.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

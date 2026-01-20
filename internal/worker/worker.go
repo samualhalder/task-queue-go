@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/samualhalder/task-queue-go/internal/model"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/store"
 	"go.uber.org/zap"
@@ -59,63 +60,22 @@ func (w *Worker) Start(ctx context.Context) {
 func (w *Worker) processOnce(ctx context.Context) {
 	w.logger.Infof("worker %d is processing a task", w.id)
 
+	var task *model.Task
+
 	err := w.store.ExecTx(ctx, func(txStore *store.Store) error {
-		task, err := txStore.Task.GetAndClaimEligibleTask(ctx, strconv.Itoa(w.id))
-		if err != nil {
-			return err
-		}
+		var err error
+		task, err = txStore.Task.GetAndClaimEligibleTask(ctx, strconv.Itoa(w.id))
 
-		if task == nil {
-			return nil
-		}
-
-		w.executor.Execute(ctx, task)
-		return nil
+		return err
 	})
-	if err != nil {
+	if err != nil || task == nil {
 		return
 	}
+	
+	if err := w.executor.Execute(ctx, task); err != nil {
 
-	// taskID, err := w.queue.Pop(ctx)
-	// if err != nil {
-	// 	w.logger.Errorw("queue pop failed", "error", err)
-	// 	time.Sleep(500 * time.Millisecond)
-	// 	return
-	// }
-
-	// task, err := w.tasks.GetById(ctx, taskID)
-	// if err != nil || task == nil {
-	// 	w.logger.Errorf("error while feting task", "error", err.Error())
-	// 	return
-	// }
-
-	// claimed, err := w.tasks.ClaimTask(ctx, taskID, strconv.Itoa(w.id))
-	// if err != nil || !claimed {
-	// 	w.logger.Errorf("error while claiming task", "error", err.Error())
-	// 	return
-	// }
-
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		w.logger.Errorw("task panic", "task_id", taskID, "panic", r)
-	// 	}
-	// }()
-
-	// if err := w.executor.Execute(ctx, task); err != nil {
-	// 	w.logger.Errorf("failed to execute task", err.Error())
-	// 	retry, err2 := w.tasks.FailedExecution(ctx, task.ID)
-	// 	if err2 != nil {
-	// 		w.logger.Errorw("failed to mark task failed", "error", err2)
-	// 		return
-	// 	}
-
-	// 	if retry {
-	// 		_ = w.queue.Push(ctx, taskID)
-	// 	}
-	// 	return
-	// }
-
-	// if err := w.tasks.SuccessfullExecution(ctx, task); err != nil {
-	// 	w.logger.Errorw("failed to mark task completed", "error", err)
-	// }
+		w.store.Task.HandleFailure(ctx, task, err.Error())
+		return
+	}
+	w.store.Task.HandleSuccess(ctx, task)
 }
