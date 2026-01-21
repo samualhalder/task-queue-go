@@ -53,7 +53,7 @@ func (t *TaskStore) GetById(ctx context.Context, id uuid.UUID) (*model.Task, err
 func (t *TaskStore) Create(ctx context.Context, task *dto.TaskResponse) error {
 	query := `INSERT INTO tasks(task_name,payload,scheduled_at,max_attempts) VALUES($1,$2, COALESCE($3,now()),$4) RETURNING id,status,priority,scheduled_at,created_at`
 
-	err := t.db.QueryRowContext(ctx, query, task.TaskName, task.Payload, task.ScheduledAt, 5).
+	err := t.db.QueryRowContext(ctx, query, task.TaskName, task.Payload, task.ScheduledAt, task.Max_Attempts).
 		Scan(&task.ID, &task.Status, &task.Priority, &task.ScheduledAt, &task.CreatedAt)
 	if err != nil {
 		return err

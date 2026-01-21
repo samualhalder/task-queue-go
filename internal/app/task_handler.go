@@ -10,9 +10,10 @@ import (
 )
 
 type taskCreatePayload struct {
-	TaskName    string          `json:"task_name" validate:"required,min=3"`
-	Payload     json.RawMessage `json:"payload" validate:"required,json"`
-	ScheduledAt *time.Time      `json:"scheduled_at" validate:"omitempty,gt"`
+	TaskName     string          `json:"task_name" validate:"required,min=3"`
+	Payload      json.RawMessage `json:"payload" validate:"required,json"`
+	ScheduledAt  *time.Time      `json:"scheduled_at" validate:"omitempty,gt"`
+	Max_Attempts int             `json:"max_attempts" validate:"omitempty,min=1"`
 }
 
 func (app *Application) CreateTask(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,11 @@ func (app *Application) CreateTask(w http.ResponseWriter, r *http.Request) {
 		TaskName:    taskData.TaskName,
 		Payload:     taskData.Payload,
 		ScheduledAt: taskData.ScheduledAt,
-		
+	}
+	if taskData.Max_Attempts > 0 {
+		task.Max_Attempts = min(taskData.Max_Attempts, app.Config.DefaultMaxAttempts)
+	} else {
+		task.Max_Attempts = app.Config.DefaultMaxAttempts
 	}
 	ctx := r.Context()
 

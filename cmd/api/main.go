@@ -33,7 +33,7 @@ func main() {
 			DB:       env.Int("REDIS_DB", 0),
 			Enabled:  env.Bool("REDIS_ENABLED", true),
 		},
-		MaxAttempts: env.Int("MAX_ATTEMPTS", 5),
+		DefaultMaxAttempts: env.Int("MAX_ATTEMPTS", 5),
 	}
 
 	db, err := db.New(cnf.DBConfig.Addr, cnf.DBConfig.MaxOpenConn, cnf.DBConfig.MaxIdlConn, cnf.DBConfig.MaxIdlTime)

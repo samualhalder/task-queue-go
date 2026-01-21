@@ -26,13 +26,13 @@ type Application struct {
 }
 
 type Config struct {
-	MaxAttempts  int
-	Addr         string
-	DBConfig     DBConfig
-	Env          string
-	WorkersCount int
-	RedisCnf     RedisConfig
-	EmailCnf     EmailConfig
+	DefaultMaxAttempts int
+	Addr               string
+	DBConfig           DBConfig
+	Env                string
+	WorkersCount       int
+	RedisCnf           RedisConfig
+	EmailCnf           EmailConfig
 }
 
 type DBConfig struct {
