@@ -31,6 +31,7 @@ func (app *Application) CreateTask(w http.ResponseWriter, r *http.Request) {
 		TaskName:    taskData.TaskName,
 		Payload:     taskData.Payload,
 		ScheduledAt: taskData.ScheduledAt,
+		
 	}
 	ctx := r.Context()
 

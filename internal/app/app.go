@@ -17,56 +17,57 @@ import (
 	"go.uber.org/zap"
 )
 
-type Application struct{
+type Application struct {
 	Config Config
-	Store *store.Store
+	Store  *store.Store
 	router http.Handler
 	Logger *zap.SugaredLogger
-	Queue   queue.Queue
+	Queue  queue.Queue
 }
 
-type Config struct{
-	Addr string
-	DBConfig DBConfig
-	Env string
+type Config struct {
+	MaxAttempts  int
+	Addr         string
+	DBConfig     DBConfig
+	Env          string
 	WorkersCount int
-	RedisCnf RedisConfig
-	EmailCnf EmailConfig
+	RedisCnf     RedisConfig
+	EmailCnf     EmailConfig
 }
 
-type DBConfig struct{
-	Addr string
+type DBConfig struct {
+	Addr        string
 	MaxOpenConn int
-	MaxIdlConn int
-	MaxIdlTime string
+	MaxIdlConn  int
+	MaxIdlTime  string
 }
 
-type RedisConfig struct{
+type RedisConfig struct {
 	Password string
-	Addr string
-	DB int
-	Enabled bool
+	Addr     string
+	DB       int
+	Enabled  bool
 }
 
-type EmailConfig struct{
+type EmailConfig struct {
 	ApiKey string
-	From string
+	From   string
 }
 
-func New(cnf Config,store *store.Store,logger *zap.SugaredLogger,queue queue.Queue) *Application{
-	app:= &Application{
-       Config: cnf,
-	   Store: store,
-	   Logger: logger,
-	   Queue: queue,
+func New(cnf Config, store *store.Store, logger *zap.SugaredLogger, queue queue.Queue) *Application {
+	app := &Application{
+		Config: cnf,
+		Store:  store,
+		Logger: logger,
+		Queue:  queue,
 	}
-	app.router=app.mount()
+	app.router = app.mount()
 	app.Logger.Info("Route is mounted")
 	return app
 }
 
-func(app *Application) mount() http.Handler{
-	r:=chi.NewRouter()
+func (app *Application) mount() http.Handler {
+	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -83,46 +84,44 @@ func(app *Application) mount() http.Handler{
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-    r.Route("/api/v1",func(r chi.Router){
-        app.HealthCheckRoute(r)
+	r.Route("/api/v1", func(r chi.Router) {
+		app.HealthCheckRoute(r)
 		app.taskRoute(r)
 	})
 
 	return r
 }
 
-func(app *Application) Run() error {
-	srv:=http.Server{
-		Addr: app.Config.Addr,
-		Handler: app.router,
+func (app *Application) Run() error {
+	srv := http.Server{
+		Addr:         app.Config.Addr,
+		Handler:      app.router,
 		WriteTimeout: time.Second * 30,
-		ReadTimeout: time.Second * 10,
-		IdleTimeout: time.Second,
+		ReadTimeout:  time.Second * 10,
+		IdleTimeout:  time.Second,
 	}
-	shutdown:=make(chan error,1)
-	go func(){
-		quit:=make(chan os.Signal,1)
+	shutdown := make(chan error, 1)
+	go func() {
+		quit := make(chan os.Signal, 1)
 
-		signal.Notify(quit, syscall.SIGINT,syscall.SIGTERM)
-		 <-quit
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
 
-		ctx,cancel:=context.WithTimeout(context.Background(), time.Second * 5)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
-		
-		shutdown <-srv.Shutdown(ctx)
+
+		shutdown <- srv.Shutdown(ctx)
 	}()
 
-
 	app.Logger.Info("Server is running on port ", app.Config.Addr)
-	err:=srv.ListenAndServe()
-	if !errors.Is(err, http.ErrServerClosed){
+	err := srv.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
-	err= <-shutdown 
+	err = <-shutdown
 
-	if err!=nil{
+	if err != nil {
 		return err
 	}
 	return nil
-} 
-
+}

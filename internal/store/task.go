@@ -51,9 +51,9 @@ func (t *TaskStore) GetById(ctx context.Context, id uuid.UUID) (*model.Task, err
 }
 
 func (t *TaskStore) Create(ctx context.Context, task *dto.TaskResponse) error {
-	query := `INSERT INTO tasks(task_name,payload,scheduled_at) VALUES($1,$2, COALESCE($3,now())) RETURNING id,status,priority,scheduled_at,created_at`
+	query := `INSERT INTO tasks(task_name,payload,scheduled_at,max_attempts) VALUES($1,$2, COALESCE($3,now()),$4) RETURNING id,status,priority,scheduled_at,created_at`
 
-	err := t.db.QueryRowContext(ctx, query, task.TaskName, task.Payload, task.ScheduledAt).
+	err := t.db.QueryRowContext(ctx, query, task.TaskName, task.Payload, task.ScheduledAt, 5).
 		Scan(&task.ID, &task.Status, &task.Priority, &task.ScheduledAt, &task.CreatedAt)
 	if err != nil {
 		return err
@@ -106,6 +106,8 @@ func (t *TaskStore) ClaimTask(ctx context.Context, taskId uuid.UUID, workerId st
 }
 
 func (t *TaskStore) FetchStuckTasks(ctx context.Context, timeout time.Duration) ([]uuid.UUID, error) {
+	timeDuration := time.Now().Add(timeout)
+
 	query := `UPDATE tasks
     SET
         attempts = attempts + 1,
@@ -114,15 +116,15 @@ func (t *TaskStore) FetchStuckTasks(ctx context.Context, timeout time.Duration) 
 		next_attempt=now(),
 		last_error='worker crashed',
         status = CASE
-            WHEN attempts + 1 >= max_attempts THEN 'canceled'
+            WHEN attempts + 1 >= max_attempts THEN 'failed'
             ELSE 'pending'
         END
     WHERE status = 'running'
-      AND locked_at < now() - $1::interval
+      AND locked_at < $1
     RETURNING id;
     `
 
-	rows, err := t.db.QueryContext(ctx, query, timeout.String())
+	rows, err := t.db.QueryContext(ctx, query, timeDuration)
 	if err != nil {
 		return nil, err
 	}
@@ -203,22 +205,24 @@ func (t *TaskStore) GetAndClaimEligibleTask(
 }
 
 func (t *TaskStore) HandleFailure(ctx context.Context, task *model.Task, errorType string) error {
-	next_attemt_time := retries.Interval(task.Attempts)
+	next_attempt_time := retries.Interval(task.Attempts)
+	next_attempt := time.Now().Add(next_attempt_time)
+
 	query := `UPDATE tasks 
 				SET 
 				   attempts=attempts+1,
 				   locked_by=NULL,
 				   locked_at=NULL,
 				   last_error=$3,
-				   next_attempt= now() + $2::interval,
+				   next_attempt= $2,
 				   status = CASE
-				   		WHEN attempts+1>=max_attempts THEN 'canceled'
+				   		WHEN attempts+1>=max_attempts THEN 'failed'
 						ELSE 'pending'
 						END
 				WHERE
 					id=$1`
 
-	row := t.db.QueryRowContext(ctx, query, task.ID, next_attemt_time, errorType)
+	row := t.db.QueryRowContext(ctx, query, task.ID, next_attempt, errorType)
 	if row.Err() == sql.ErrNoRows {
 		return row.Err()
 	}

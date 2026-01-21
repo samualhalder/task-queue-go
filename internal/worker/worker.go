@@ -58,7 +58,7 @@ func (w *Worker) Start(ctx context.Context) {
 }
 
 func (w *Worker) processOnce(ctx context.Context) {
-	w.logger.Infof("worker %d is processing a task", w.id)
+	// w.logger.Infof("worker %d is processing a task", w.id)
 
 	var task *model.Task
 
@@ -71,7 +71,7 @@ func (w *Worker) processOnce(ctx context.Context) {
 	if err != nil || task == nil {
 		return
 	}
-
+	w.logger.Debugf("fetched the task from queue", "task", task.ID, "attempt", task.Attempts, "error", err)
 	if err := w.executor.Execute(ctx, task); err != nil {
 
 		w.store.ExecTx(ctx, func(txStore *store.Store) error {
