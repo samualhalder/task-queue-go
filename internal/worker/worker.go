@@ -60,6 +60,12 @@ func (w *Worker) Start(ctx context.Context) {
 func (w *Worker) processOnce(ctx context.Context) {
 	// w.logger.Infof("worker %d is processing a task", w.id)
 
+	defer func() {
+		if r := recover(); r != nil {
+			w.logger.Errorf("worker panic", "worker_id", w.id, "panic", r)
+		}
+	}()
+
 	var task *model.Task
 
 	err := w.store.ExecTx(ctx, func(txStore *store.Store) error {
@@ -71,6 +77,7 @@ func (w *Worker) processOnce(ctx context.Context) {
 	if err != nil || task == nil {
 		return
 	}
+
 	w.logger.Debugf("fetched the task from queue", "task", task.ID, "attempt", task.Attempts, "error", err)
 	if err := w.executor.Execute(ctx, task); err != nil {
 
