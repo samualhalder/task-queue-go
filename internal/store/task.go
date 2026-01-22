@@ -245,3 +245,21 @@ func (t *TaskStore) HandleSuccess(ctx context.Context, task *model.Task) error {
 
 	return nil
 }
+
+func (t *TaskStore) HandleFailed(ctx context.Context, task *model.Task, errorType string) error {
+	query := `UPDATE tasks 
+				SET 
+				   locked_by=NULL,
+				   locked_at=NULL,
+				   last_error=$2,
+				   status='failed'				   
+				WHERE
+					id=$1`
+
+	row := t.db.QueryRowContext(ctx, query, task.ID, errorType)
+	if row.Err() == sql.ErrNoRows {
+		return row.Err()
+	}
+
+	return nil
+}

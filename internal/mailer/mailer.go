@@ -3,6 +3,8 @@ package mailer
 import (
 	"context"
 	"embed"
+
+	taskerrors "github.com/samualhalder/task-queue-go/internal/errors"
 )
 
 const (
@@ -14,12 +16,12 @@ const (
 //go:embed "templates"
 var FS embed.FS
 
-type EmailMessage struct{
-	To []string
+type EmailMessage struct {
+	To      []string
 	Subject string
-	HTML string
+	HTML    string
 }
 
 type Client interface {
-	Send(context.Context, EmailMessage) error
+	Send(context.Context, EmailMessage) *taskerrors.TaskError
 }

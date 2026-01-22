@@ -21,6 +21,7 @@ type TaskRepository interface {
 	GetAndClaimEligibleTask(ctx context.Context, workerID string) (*model.Task, error)
 	HandleFailure(ctx context.Context, task *model.Task, errorType string) error
 	HandleSuccess(ctx context.Context, task *model.Task) error
+	HandleFailed(ctx context.Context, task *model.Task, errorType string) error
 }
 
 type Store struct {

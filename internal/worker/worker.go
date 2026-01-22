@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	taskerrors "github.com/samualhalder/task-queue-go/internal/errors"
 	"github.com/samualhalder/task-queue-go/internal/model"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/store"
@@ -81,9 +82,15 @@ func (w *Worker) processOnce(ctx context.Context) {
 	w.logger.Debugf("fetched the task from queue", "task", task.ID, "attempt", task.Attempts, "error", err)
 	if err := w.executor.Execute(ctx, task); err != nil {
 
-		w.store.ExecTx(ctx, func(txStore *store.Store) error {
-			return w.store.Task.HandleFailure(ctx, task, err.Error())
-		})
+		if err.Type == taskerrors.ErrRetryable {
+			w.store.ExecTx(ctx, func(txStore *store.Store) error {
+				return w.store.Task.HandleFailure(ctx, task, err.Error())
+			})
+		} else {
+			w.store.ExecTx(ctx, func(txStore *store.Store) error {
+				return w.store.Task.HandleFailed(ctx, task, err.Error())
+			})
+		}
 		return
 	}
 	w.store.ExecTx(ctx, func(txStore *store.Store) error {

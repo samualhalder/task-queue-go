@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/resend/resend-go/v3"
+	taskerrors "github.com/samualhalder/task-queue-go/internal/errors"
 )
 
 type resendMailer struct {
@@ -22,9 +23,8 @@ func NewResendMailer(apiKey, from string) *resendMailer {
 	}
 }
 
-func (r *resendMailer) Send(ctx context.Context, data EmailMessage) error {
+func (r *resendMailer) Send(ctx context.Context, data EmailMessage) *taskerrors.TaskError {
 	fmt.Print("tried to send mail")
-	return fmt.Errorf("mail service is down")
 
 	params := &resend.SendEmailRequest{
 		From:    r.From,
@@ -35,7 +35,7 @@ func (r *resendMailer) Send(ctx context.Context, data EmailMessage) error {
 	_, err := r.Client.Emails.Send(params)
 	fmt.Printf("sending mail :", "mail", params.To)
 	if err != nil {
-		return fmt.Errorf("error while sending mail: %w", err)
+		return taskerrors.Retryable(fmt.Errorf("error while sending mail: %w", err))
 	}
 	return nil
 }
