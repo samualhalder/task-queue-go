@@ -158,7 +158,8 @@ func (t *TaskStore) GetAndClaimEligibleTask(
 			max_attempts,
 			next_attempt,
 			created_at,
-			updated_at
+			updated_at,
+			last_error
 		FROM tasks
 		WHERE status= 'pending'
 		  AND next_attempt <= NOW()
@@ -178,6 +179,7 @@ func (t *TaskStore) GetAndClaimEligibleTask(
 		&task.NextAttempt,
 		&task.CreatedAt,
 		&task.UpdatedAt,
+		&task.LastError,
 	)
 
 	if err != nil {

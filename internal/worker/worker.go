@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -82,13 +83,25 @@ func (w *Worker) processOnce(ctx context.Context) {
 	w.logger.Debugf("fetched the task from queue", "task", task.ID, "attempt", task.Attempts, "error", err)
 	if err := w.executor.Execute(ctx, task); err != nil {
 
+		fmt.Print("before errRet")
 		if err.Type == taskerrors.ErrRetryable {
+			fmt.Print("inside errRet")
 			w.store.ExecTx(ctx, func(txStore *store.Store) error {
 				return w.store.Task.HandleFailure(ctx, task, err.Error())
 			})
 		} else {
 			w.store.ExecTx(ctx, func(txStore *store.Store) error {
-				return w.store.Task.HandleFailed(ctx, task, err.Error())
+				msg := err.Error()
+				task.LastError = &msg
+				err1 := w.store.Task.HandleFailed(ctx, task, err.Error())
+				if err1 != nil {
+					return err
+				}
+				err1 = w.store.Dlq.Push(ctx, task, string(err.Type))
+				if err1 != nil {
+					return err
+				}
+				return nil
 			})
 		}
 		return

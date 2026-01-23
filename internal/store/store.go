@@ -23,16 +23,21 @@ type TaskRepository interface {
 	HandleSuccess(ctx context.Context, task *model.Task) error
 	HandleFailed(ctx context.Context, task *model.Task, errorType string) error
 }
+type DlqRepository interface {
+	Push(ctx context.Context, task *model.Task, errorType string) error
+}
 
 type Store struct {
 	db   *sql.DB
 	Task TaskRepository
+	Dlq  DlqRepository
 }
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{
 		db:   db,
 		Task: &TaskStore{db},
+		Dlq:  &DlqStore{db},
 	}
 }
 
