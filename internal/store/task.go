@@ -163,6 +163,7 @@ func (t *TaskStore) GetAndClaimEligibleTask(
 		FROM tasks
 		WHERE status= 'pending'
 		  AND next_attempt <= NOW()
+		  AND scheduled_at<=NOW()
 		ORDER BY next_attempt
 		LIMIT 1
 		FOR UPDATE SKIP LOCKED
