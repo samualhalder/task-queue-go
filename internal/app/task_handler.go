@@ -27,17 +27,25 @@ func (app *Application) CreateTask(w http.ResponseWriter, r *http.Request) {
 		app.badRequest(w, r, err)
 		return
 	}
+	var scheduledTime time.Time
 
+	if taskData.ScheduledAt != nil {
+		scheduledTime = *taskData.ScheduledAt
+	} else {
+		// default: run immediately
+		scheduledTime = time.Now().UTC()
+	}
 	task := &dto.TaskResponse{
 		TaskName:    taskData.TaskName,
 		Payload:     taskData.Payload,
-		ScheduledAt: taskData.ScheduledAt,
+		ScheduledAt: &scheduledTime,
 	}
 	if taskData.Max_Attempts > 0 {
 		task.Max_Attempts = min(taskData.Max_Attempts, app.Config.DefaultMaxAttempts)
 	} else {
 		task.Max_Attempts = app.Config.DefaultMaxAttempts
 	}
+
 	ctx := r.Context()
 
 	if err := app.Store.Task.Create(ctx, task); err != nil {
