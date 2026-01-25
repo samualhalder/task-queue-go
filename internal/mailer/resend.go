@@ -33,7 +33,7 @@ func (r *resendMailer) Send(ctx context.Context, data EmailMessage) *taskerrors.
 		Subject: data.Subject,
 	}
 	_, err := r.Client.Emails.Send(params)
-	fmt.Printf("sending mail :", "mail", params.To)
+
 	if err != nil {
 		return taskerrors.Retryable(fmt.Errorf("error while sending mail: %w", err))
 	}

@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -39,6 +38,7 @@ func NewWorker(
 }
 
 func (w *Worker) Start(ctx context.Context) {
+
 	w.logger.Infof("Worker %d is started ", w.id)
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -55,12 +55,12 @@ func (w *Worker) Start(ctx context.Context) {
 				continue
 			}
 			w.processOnce(ctx)
+
 		}
 	}
 }
 
 func (w *Worker) processOnce(ctx context.Context) {
-	// w.logger.Infof("worker %d is processing a task", w.id)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -68,6 +68,8 @@ func (w *Worker) processOnce(ctx context.Context) {
 		}
 	}()
 
+	// TODO: generate the thoken here (uuid)
+	
 	var task *model.Task
 
 	err := w.store.ExecTx(ctx, func(txStore *store.Store) error {
@@ -79,13 +81,13 @@ func (w *Worker) processOnce(ctx context.Context) {
 	if err != nil || task == nil {
 		return
 	}
+	if w.id == 1 {
+		time.Sleep(time.Minute * 5)
+	}
 
-	w.logger.Debugf("fetched the task from queue", "task", task.ID, "attempt", task.Attempts, "error", err)
 	if err := w.executor.Execute(ctx, task); err != nil {
 
-		fmt.Print("before errRet")
 		if err.Type == taskerrors.ErrRetryable {
-			fmt.Print("inside errRet")
 			w.store.ExecTx(ctx, func(txStore *store.Store) error {
 				return w.store.Task.HandleFailure(ctx, task, err.Error())
 			})

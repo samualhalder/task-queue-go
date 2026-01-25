@@ -49,6 +49,8 @@ type RedisConfig struct {
 	Enabled  bool
 }
 
+
+
 type EmailConfig struct {
 	ApiKey string
 	From   string

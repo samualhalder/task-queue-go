@@ -54,11 +54,11 @@ var allowedStateChanges = map[State][]State{
 	StateCompleted: {},
 }
 
-func canStateChange(from State, to State) bool {
-	for _, s := range allowedStateChanges[from] {
-		if s == to {
-			return true
-		}
-	}
-	return false
-}
+// func canStateChange(from State, to State) bool {
+// 	for _, s := range allowedStateChanges[from] {
+// 		if s == to {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }

@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		panic("error while loading env")
 	}
-
+	
 	cnf := app.Config{
 		Addr: env.String("ADDR", ":8080"),
 		DBConfig: app.DBConfig{
