@@ -16,12 +16,13 @@ type TaskRepository interface {
 	Create(context.Context, *dto.TaskResponse) error
 	FailedExecution(context.Context, uuid.UUID) (bool, error)
 	SuccessfullExecution(ctx context.Context, task *model.Task) error
-	ClaimTask(ctx context.Context, taskId uuid.UUID, workerId string) (bool, error)
+	ClaimTask(ctx context.Context, taskId *model.Task, workerId string) error
 	FetchStuckTasks(context.Context, time.Duration) ([]uuid.UUID, error)
 	GetAndClaimEligibleTask(ctx context.Context, workerID string) (*model.Task, error)
 	HandleFailure(ctx context.Context, task *model.Task, errorType string) error
 	HandleSuccess(ctx context.Context, task *model.Task) error
 	HandleFailed(ctx context.Context, task *model.Task, errorType string) error
+	FetchEligibleTask(ctx context.Context) (*model.Task, error)
 }
 type DlqRepository interface {
 	Push(ctx context.Context, task *model.Task, errorType string) error

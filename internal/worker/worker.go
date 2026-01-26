@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -69,20 +70,25 @@ func (w *Worker) processOnce(ctx context.Context) {
 	}()
 
 	// TODO: generate the thoken here (uuid)
-	
+
 	var task *model.Task
 
 	err := w.store.ExecTx(ctx, func(txStore *store.Store) error {
 		var err error
-		task, err = txStore.Task.GetAndClaimEligibleTask(ctx, strconv.Itoa(w.id))
+		task, err = txStore.Task.FetchEligibleTask(ctx)
+		if err != nil {
+			return err
+		}
+		if task == nil {
+			return fmt.Errorf("no task found")
+		}
+		// TODO: check if task can be executable using rate_limit_table
 
+		err = txStore.Task.ClaimTask(ctx, task, strconv.Itoa(w.id))
 		return err
 	})
 	if err != nil || task == nil {
 		return
-	}
-	if w.id == 1 {
-		time.Sleep(time.Minute * 5)
 	}
 
 	if err := w.executor.Execute(ctx, task); err != nil {

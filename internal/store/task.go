@@ -91,18 +91,21 @@ func (t *TaskStore) SuccessfullExecution(ctx context.Context, task *model.Task) 
 	return nil
 }
 
-func (t *TaskStore) ClaimTask(ctx context.Context, taskId uuid.UUID, workerId string) (bool, error) {
-	query := `UPDATE tasks SET locked_by=$1,status='running',locked_at=NOW() WHERE id=$2 AND locked_by IS NULL AND status='pending'`
-	res, err := t.db.ExecContext(ctx, query, workerId, taskId)
+func (t *TaskStore) ClaimTask(ctx context.Context, task *model.Task, workerID string) error {
+	_, err := t.db.ExecContext(ctx, `
+		UPDATE tasks
+		SET status = 'running',
+		    locked_by = $1,
+		    locked_at = NOW(),
+		    updated_at = NOW()
+		WHERE id = $2
+	`, workerID, task.ID)
+
 	if err != nil {
-		return false, err
-	}
-	effRows, err := res.RowsAffected()
-	if err != nil {
-		return false, err
+		return err
 	}
 
-	return effRows == 1, nil
+	return nil
 }
 
 func (t *TaskStore) FetchStuckTasks(ctx context.Context, timeout time.Duration) ([]uuid.UUID, error) {
@@ -211,8 +214,8 @@ func (t *TaskStore) HandleFailure(ctx context.Context, task *model.Task, errorTy
 	next_attempt_time := retries.Interval(task.Attempts)
 	next_attempt := time.Now().Add(next_attempt_time)
 
-	query := `UPDATE tasks 
-				SET 
+	query := `UPDATE tasks
+				SET
 				   attempts=attempts+1,
 				   locked_by=NULL,
 				   locked_at=NULL,
@@ -233,8 +236,8 @@ func (t *TaskStore) HandleFailure(ctx context.Context, task *model.Task, errorTy
 	return nil
 }
 func (t *TaskStore) HandleSuccess(ctx context.Context, task *model.Task) error {
-	query := `UPDATE tasks 
-				SET 
+	query := `UPDATE tasks
+				SET
 				   locked_by=NULL,
 				   locked_at=NULL,
 				   status = 'completed'
@@ -250,12 +253,12 @@ func (t *TaskStore) HandleSuccess(ctx context.Context, task *model.Task) error {
 }
 
 func (t *TaskStore) HandleFailed(ctx context.Context, task *model.Task, errorType string) error {
-	query := `UPDATE tasks 
-				SET 
+	query := `UPDATE tasks
+				SET
 				   locked_by=NULL,
 				   locked_at=NULL,
 				   last_error=$2,
-				   status='failed'				   
+				   status='failed'
 				WHERE
 					id=$1`
 
@@ -265,4 +268,49 @@ func (t *TaskStore) HandleFailed(ctx context.Context, task *model.Task, errorTyp
 	}
 
 	return nil
+}
+
+func (t *TaskStore) FetchEligibleTask(ctx context.Context) (*model.Task, error) {
+	query := `
+		SELECT
+			id,
+			task_name,
+			payload,
+			status,
+			attempts,
+			max_attempts,
+			next_attempt,
+			created_at,
+			updated_at,
+			last_error
+		FROM tasks
+		WHERE status= 'pending'
+		  AND next_attempt <= NOW()
+		  AND scheduled_at<=NOW()
+		ORDER BY next_attempt
+		LIMIT 1
+		FOR UPDATE SKIP LOCKED
+	`
+
+	task := &model.Task{}
+	err := t.db.QueryRowContext(ctx, query).Scan(
+		&task.ID,
+		&task.TaskName,
+		&task.Payload,
+		&task.Status,
+		&task.Attempts,
+		&task.MaxAttempts,
+		&task.NextAttempt,
+		&task.CreatedAt,
+		&task.UpdatedAt,
+		&task.LastError,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return task, nil
 }
