@@ -28,17 +28,26 @@ type DlqRepository interface {
 	Push(ctx context.Context, task *model.Task, errorType string) error
 }
 
+type TaskRateLimitRepository interface {
+	AllowTx(
+		ctx context.Context,
+		task *model.Task,
+	) (bool, error)
+}
+
 type Store struct {
-	db   *sql.DB
-	Task TaskRepository
-	Dlq  DlqRepository
+	db            *sql.DB
+	Task          TaskRepository
+	Dlq           DlqRepository
+	TaskRateLimit TaskRateLimitRepository
 }
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{
-		db:   db,
-		Task: &TaskStore{db},
-		Dlq:  &DlqStore{db},
+		db:            db,
+		Task:          &TaskStore{db},
+		Dlq:           &DlqStore{db},
+		TaskRateLimit: &TaskRateLimitStore{db},
 	}
 }
 
@@ -50,8 +59,10 @@ func (s *Store) ExecTx(ctx context.Context, fn func(*Store) error) error {
 	}
 
 	txStore := &Store{
-		db:   s.db,
-		Task: &TaskStore{db: tx},
+		db:            s.db,
+		Task:          &TaskStore{db: tx},
+		Dlq:           &DlqStore{DB: tx},
+		TaskRateLimit: &TaskRateLimitStore{db: tx},
 	}
 
 	if err := fn(txStore); err != nil {

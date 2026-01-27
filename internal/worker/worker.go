@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -80,10 +79,18 @@ func (w *Worker) processOnce(ctx context.Context) {
 			return err
 		}
 		if task == nil {
-			return fmt.Errorf("no task found")
+			return nil
 		}
 		// TODO: check if task can be executable using rate_limit_table
 
+		procced, err := txStore.TaskRateLimit.AllowTx(ctx, task)
+		if err != nil {
+			return err
+		}
+		if !procced {
+			task = nil
+			return nil
+		}
 		err = txStore.Task.ClaimTask(ctx, task, strconv.Itoa(w.id))
 		return err
 	})

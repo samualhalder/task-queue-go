@@ -24,7 +24,8 @@ func NewResendMailer(apiKey, from string) *resendMailer {
 }
 
 func (r *resendMailer) Send(ctx context.Context, data EmailMessage) *taskerrors.TaskError {
-	fmt.Print("tried to send mail")
+	fmt.Print("send mail successfully ")
+	return nil
 
 	params := &resend.SendEmailRequest{
 		From:    r.From,

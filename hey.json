@@ -1,0 +1,14 @@
+{
+  "task_name": "MAIL",
+  "max_attempts": 7,
+  "payload": {
+    "template": "welcome-email",
+    "to": ["samual.halder2020@gmail.com"],
+    "subject": "Welcome aboard 👋",
+    "data": {
+      "name": "Sam",
+      "app_name": "Acme",
+      "login_url": "https://app.acme.com/login"
+    }
+  }
+}
