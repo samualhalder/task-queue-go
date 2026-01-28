@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/store"
+
 	"go.uber.org/zap"
 )
 
@@ -48,8 +49,6 @@ type RedisConfig struct {
 	DB       int
 	Enabled  bool
 }
-
-
 
 type EmailConfig struct {
 	ApiKey string

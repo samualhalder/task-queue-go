@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/samualhalder/task-queue-go/internal/dto"
 	"github.com/samualhalder/task-queue-go/internal/model"
+	"github.com/samualhalder/task-queue-go/internal/payloads"
 )
 
 type TaskRepository interface {
@@ -23,6 +24,7 @@ type TaskRepository interface {
 	HandleSuccess(ctx context.Context, task *model.Task) error
 	HandleFailed(ctx context.Context, task *model.Task, errorType string) error
 	FetchEligibleTask(ctx context.Context) (*model.Task, error)
+	GetTasks(ctx context.Context, params payloads.TaskQueryPayload) ([]model.Task, error)
 }
 type DlqRepository interface {
 	Push(ctx context.Context, task *model.Task, errorType string) error

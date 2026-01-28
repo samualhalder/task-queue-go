@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/samualhalder/task-queue-go/internal/dto"
 	"github.com/samualhalder/task-queue-go/internal/model"
+	"github.com/samualhalder/task-queue-go/internal/payloads"
 	"github.com/samualhalder/task-queue-go/internal/retries"
 )
 
@@ -313,4 +315,53 @@ func (t *TaskStore) FetchEligibleTask(ctx context.Context) (*model.Task, error) 
 		return nil, err
 	}
 	return task, nil
+}
+
+func (t *TaskStore) GetTasks(ctx context.Context, params payloads.TaskQueryPayload) ([]model.Task, error) {
+	query := `
+		SELECT
+			id, task_name,payload, status, attempts, max_attempts,
+			locked_by, locked_at, created_at, updated_at,last_error,scheduled_at
+		FROM tasks
+		WHERE
+		($1::text IS NULL OR task_name = $1::text)
+AND ($2::text IS NULL OR status = $2::text)
+AND ($3::timestamptz IS NULL OR created_at <= $3::timestamptz)
+AND ($4::timestamptz IS NULL OR created_at >= $4::timestamptz)
+ORDER BY created_at DESC
+LIMIT $5 OFFSET $6
+        `
+	tasks := []model.Task{}
+	row, err := t.db.QueryContext(ctx, query, params.TaskName, params.Status, params.CreatedBefore, params.CreatedAfter, params.Limit, params.Skip)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return tasks, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	for row.Next() {
+		var task model.Task
+		err := row.Scan(&task.ID,
+			&task.TaskName,
+			&task.Payload,
+			&task.Status,
+			&task.Attempts,
+			&task.MaxAttempts,
+			&task.LockedBy,
+			&task.LockedAt,
+			&task.CreatedAt,
+			&task.UpdatedAt,
+			&task.LastError,
+			&task.ScheduledAt,
+		)
+		if err != nil {
+			fmt.Print("error:", err.Error())
+			return nil, err
+		}
+		tasks = append(tasks, task)
+		fmt.Print("hit here")
+	}
+	return tasks, nil
 }
