@@ -195,3 +195,36 @@ func (app *Application) GetTaskById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (app *Application) RunTask(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	_, err := uuid.Parse(id)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+	err = app.Store.Task.MakeTaskEligible(r.Context(), id)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+	if err := jsonresponse.Success(w, http.StatusOK, "Task executed succesfully", nil); err != nil {
+		app.internalServerError(w, r, err)
+	}
+}
+func (app *Application) FailedTask(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	_, err := uuid.Parse(id)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+	err = app.Store.Task.MakeTaskFailed(r.Context(), id)
+	if err != nil {
+		app.badRequest(w, r, err)
+		return
+	}
+	if err := jsonresponse.Success(w, http.StatusOK, "Task failed succesfully", nil); err != nil {
+		app.internalServerError(w, r, err)
+	}
+}

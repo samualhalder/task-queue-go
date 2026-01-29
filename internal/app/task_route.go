@@ -7,7 +7,13 @@ func (app *Application) taskRoute(r chi.Router) {
 		r.Post("/", app.CreateTask)
 		r.Route("/admin", func(r chi.Router) {
 			r.Get("/", app.ListTasks)
-			r.Get("/{id}", app.GetTaskById)
+			r.Route("/{id}", func(r chi.Router) {
+				r.Get("/", app.GetTaskById)
+				r.Post("/run", app.RunTask)
+				r.Post("/cancel", app.FailedTask)
+
+			})
+
 		})
 	})
 }

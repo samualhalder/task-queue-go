@@ -365,3 +365,27 @@ LIMIT $5 OFFSET $6
 	}
 	return tasks, nil
 }
+
+func (t *TaskStore) MakeTaskEligible(ctx context.Context, uuid string) error {
+	query := ` UPDATE tasks
+			SET next_attempt=now(),
+				scheduled_at=now(),
+				status='pending'
+			WHERE id=$1`
+	_, err := t.db.ExecContext(ctx, query, uuid)
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("No record found")
+	}
+	return nil
+}
+
+func (t *TaskStore) MakeTaskFailed(ctx context.Context, uuid string) error {
+	query := ` UPDATE tasks
+			SET status='failed'
+			WHERE id=$1`
+	_, err := t.db.ExecContext(ctx, query, uuid)
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("No record found")
+	}
+	return nil
+}

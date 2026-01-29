@@ -25,6 +25,8 @@ type TaskRepository interface {
 	HandleFailed(ctx context.Context, task *model.Task, errorType string) error
 	FetchEligibleTask(ctx context.Context) (*model.Task, error)
 	GetTasks(ctx context.Context, params payloads.TaskQueryPayload) ([]model.Task, error)
+	MakeTaskEligible(ctx context.Context, uuid string) error
+	MakeTaskFailed(ctx context.Context, uuid string) error
 }
 type DlqRepository interface {
 	Push(ctx context.Context, task *model.Task, errorType string) error
