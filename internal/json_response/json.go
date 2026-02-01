@@ -7,40 +7,40 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var Validator * validator.Validate
+var Validator *validator.Validate
 
-func init(){
-	Validator= validator.New(validator.WithRequiredStructEnabled())
+func init() {
+	Validator = validator.New(validator.WithRequiredStructEnabled())
 }
 
-func writeJson(w http.ResponseWriter,status int,data any)error{
-	w.Header().Set("Content-Type","application/json")
+func writeJson(w http.ResponseWriter, status int, data any) error {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(data)
 }
 
-func ReadJson(w http.ResponseWriter,r *http.Request,data any) error{
-	maxBytes:= 1_048_578
-	r.Body=http.MaxBytesReader(w,r.Body,int64(maxBytes))
-	decoder:= json.NewDecoder(r.Body)
+func ReadJson(w http.ResponseWriter, r *http.Request, data any) error {
+	maxBytes := 1_048_578
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+	decoder := json.NewDecoder(r.Body)
 	// decoder.DisallowUnknownFields()
 	return decoder.Decode(data)
 }
 
-func Error(w http.ResponseWriter,status int,message string) error {
-	 type envelope struct{
-		Error bool `json:"error"`
+func Error(w http.ResponseWriter, status int, message string) error {
+	type envelope struct {
+		Error   bool   `json:"error"`
 		Message string `json:"message"`
-	 }
-	 return writeJson(w,status,envelope{Error:true, Message:message})
+	}
+	return writeJson(w, status, envelope{Error: true, Message: message})
 }
 
-func Success(w http.ResponseWriter,status int,message string,data any) error {
-	 type envelope struct{
-		Error bool `json:"error"`
+func Success(w http.ResponseWriter, status int, message string, data any) error {
+	type envelope struct {
+		Error   bool   `json:"error"`
 		Message string `json:"message"`
-		Data any `json:"data"`
-	 }
+		Data    any    `json:"data"`
+	}
 
-	 return writeJson(w,status,envelope{Error:false, Message:message,Data:data })
+	return writeJson(w, status, envelope{Error: false, Message: message, Data: data})
 }

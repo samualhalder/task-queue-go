@@ -31,6 +31,9 @@ type TaskRepository interface {
 type DlqRepository interface {
 	Push(ctx context.Context, task *model.Task, errorType string) error
 }
+type AdminRepository interface {
+	Create(context.Context, model.Admin) error
+}
 
 type TaskRateLimitRepository interface {
 	AllowTx(
@@ -44,6 +47,7 @@ type Store struct {
 	Task          TaskRepository
 	Dlq           DlqRepository
 	TaskRateLimit TaskRateLimitRepository
+	Admin         AdminRepository
 }
 
 func NewStore(db *sql.DB) *Store {
@@ -52,6 +56,7 @@ func NewStore(db *sql.DB) *Store {
 		Task:          &TaskStore{db},
 		Dlq:           &DlqStore{db},
 		TaskRateLimit: &TaskRateLimitStore{db},
+		Admin:         &AdiminStore{db},
 	}
 }
 
