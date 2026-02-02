@@ -33,6 +33,8 @@ type DlqRepository interface {
 }
 type AdminRepository interface {
 	Create(context.Context, model.Admin) error
+	GetByEmail(ctx context.Context, email string) (*model.Admin, error)
+	GetById(ctx context.Context, id string) (*model.Admin, error)
 }
 
 type TaskRateLimitRepository interface {

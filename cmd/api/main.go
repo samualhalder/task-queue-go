@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/joho/godotenv"
 	"github.com/samualhalder/task-queue-go/internal/app"
+	"github.com/samualhalder/task-queue-go/internal/auth"
 	"github.com/samualhalder/task-queue-go/internal/db"
 	"github.com/samualhalder/task-queue-go/internal/env"
 	"github.com/samualhalder/task-queue-go/internal/logger"
@@ -17,7 +18,7 @@ func main() {
 	if err != nil {
 		panic("error while loading env")
 	}
-	
+
 	cnf := app.Config{
 		Addr: env.String("ADDR", ":8080"),
 		DBConfig: app.DBConfig{
@@ -34,6 +35,11 @@ func main() {
 			Enabled:  env.Bool("REDIS_ENABLED", true),
 		},
 		DefaultMaxAttempts: env.Int("MAX_ATTEMPTS", 5),
+		AuthCnf: app.AuthConfig{
+			Secret:  env.String("JWT_SECRET", ""),
+			Issuer:  env.String("JWT_ISSUER", ""),
+			Auditor: env.String("JWT_AUDITOR", ""),
+		},
 	}
 
 	db, err := db.New(cnf.DBConfig.Addr, cnf.DBConfig.MaxOpenConn, cnf.DBConfig.MaxIdlConn, cnf.DBConfig.MaxIdlTime)
@@ -52,7 +58,7 @@ func main() {
 	rdb := redis.New(cnf.RedisCnf.Password, cnf.RedisCnf.Addr, cnf.RedisCnf.DB)
 	taskQueue := queue.NewRedisQueue(rdb, "queue:tasks:default")
 
-	app := app.New(cnf, store, logger.Sugar(), taskQueue)
+	app := app.New(cnf, store, logger.Sugar(), taskQueue, auth.NewJWTAuthinticator("", "", ""))
 
 	if err := app.Run(); err != nil {
 		panic(err)

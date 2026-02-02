@@ -58,7 +58,7 @@ func main() {
 	rdb := redis.New(cnf.RedisCnf.Password, cnf.RedisCnf.Addr, cnf.RedisCnf.DB)
 	taskQueue := queue.NewRedisQueue(rdb, "queue:tasks:default")
 
-	app := app.New(cnf, store, logger.Sugar(), taskQueue)
+	app := app.New(cnf, store, logger.Sugar(), taskQueue, nil)
 
 	commands := []commands.Commands{
 		&commands.CreateAdmin{App: *app},

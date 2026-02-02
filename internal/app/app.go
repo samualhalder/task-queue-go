@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/samualhalder/task-queue-go/internal/auth"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/store"
 
@@ -24,6 +25,7 @@ type Application struct {
 	router http.Handler
 	Logger *zap.SugaredLogger
 	Queue  queue.Queue
+	Auth   auth.Authenticator
 }
 
 type Config struct {
@@ -34,6 +36,7 @@ type Config struct {
 	WorkersCount       int
 	RedisCnf           RedisConfig
 	EmailCnf           EmailConfig
+	AuthCnf            AuthConfig
 }
 
 type DBConfig struct {
@@ -55,12 +58,19 @@ type EmailConfig struct {
 	From   string
 }
 
-func New(cnf Config, store *store.Store, logger *zap.SugaredLogger, queue queue.Queue) *Application {
+type AuthConfig struct {
+	Secret  string
+	Issuer  string
+	Auditor string
+}
+
+func New(cnf Config, store *store.Store, logger *zap.SugaredLogger, queue queue.Queue, auth auth.Authenticator) *Application {
 	app := &Application{
 		Config: cnf,
 		Store:  store,
 		Logger: logger,
 		Queue:  queue,
+		Auth:   auth,
 	}
 	app.router = app.mount()
 	app.Logger.Info("Route is mounted")
@@ -88,6 +98,7 @@ func (app *Application) mount() http.Handler {
 	r.Route("/api/v1", func(r chi.Router) {
 		app.HealthCheckRoute(r)
 		app.taskRoute(r)
+		app.authRoute(r)
 	})
 
 	return r
