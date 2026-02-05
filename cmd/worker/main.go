@@ -23,6 +23,7 @@ import (
 )
 
 func main() {
+
 	err := godotenv.Load()
 	if err != nil {
 		panic("error while loading env in worker")
@@ -63,6 +64,7 @@ func main() {
 	}
 
 	rdb := redis.New(cnf.RedisCnf.Password, cnf.RedisCnf.Addr, cnf.RedisCnf.DB)
+
 	taskQueue := queue.NewRedisQueue(rdb, "queue:tasks:default")
 
 	taskRegsitry := taskexecutor.NewRegistry()

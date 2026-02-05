@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/samualhalder/task-queue-go/internal/dto"
 	jsonresponse "github.com/samualhalder/task-queue-go/internal/json_response"
+	metrics "github.com/samualhalder/task-queue-go/internal/matrics"
 	"github.com/samualhalder/task-queue-go/internal/payloads"
 )
 
@@ -70,7 +71,7 @@ func (app *Application) CreateTask(w http.ResponseWriter, r *http.Request) {
 		app.internalServerError(w, r, err)
 		return
 	}
-
+	metrics.TasksPending.Inc()
 	if err := jsonresponse.Success(w, http.StatusCreated, "task created successfully", task); err != nil {
 		app.internalServerError(w, r, err)
 		return

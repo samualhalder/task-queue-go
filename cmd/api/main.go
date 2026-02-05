@@ -7,12 +7,14 @@ import (
 	"github.com/samualhalder/task-queue-go/internal/db"
 	"github.com/samualhalder/task-queue-go/internal/env"
 	"github.com/samualhalder/task-queue-go/internal/logger"
+	metrics "github.com/samualhalder/task-queue-go/internal/matrics"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/redis"
 	"github.com/samualhalder/task-queue-go/internal/store"
 )
 
 func main() {
+	metrics.Register()
 
 	err := godotenv.Load()
 	if err != nil {

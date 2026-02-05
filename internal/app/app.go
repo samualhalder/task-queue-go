@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/samualhalder/task-queue-go/internal/auth"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/store"
@@ -94,7 +95,7 @@ func (app *Application) mount() http.Handler {
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
-
+	r.Get("/metrics", promhttp.Handler().ServeHTTP)
 	r.Route("/api/v1", func(r chi.Router) {
 		app.HealthCheckRoute(r)
 		app.taskRoute(r)
@@ -127,6 +128,7 @@ func (app *Application) Run() error {
 
 	app.Logger.Info("Server is running on port ", app.Config.Addr)
 	err := srv.ListenAndServe()
+
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
