@@ -24,9 +24,10 @@ import (
 
 func main() {
 
-	err := godotenv.Load()
-	if err != nil {
-		panic("error while loading env in worker")
+	if os.Getenv("ENV") != "docker" {
+		if err := godotenv.Load(); err != nil {
+			panic("error while loading env")
+		}
 	}
 
 	cnf := app.Config{

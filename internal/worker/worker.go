@@ -6,7 +6,6 @@ import (
 	"time"
 
 	taskerrors "github.com/samualhalder/task-queue-go/internal/errors"
-	metrics "github.com/samualhalder/task-queue-go/internal/matrics"
 	"github.com/samualhalder/task-queue-go/internal/model"
 	"github.com/samualhalder/task-queue-go/internal/queue"
 	"github.com/samualhalder/task-queue-go/internal/store"
@@ -92,25 +91,19 @@ func (w *Worker) processOnce(ctx context.Context) {
 			task = nil
 			return nil
 		}
-		// metrics.TasksPending.Dec()
-		metrics.TasksRunning.Inc()
 		err = txStore.Task.ClaimTask(ctx, task, strconv.Itoa(w.id))
 		return err
 	})
 	if err != nil || task == nil {
 		return
 	}
-
 	if err := w.executor.Execute(ctx, task); err != nil {
 
-		metrics.TasksRunning.Dec()
 		if err.Type == taskerrors.ErrRetryable {
-			metrics.TasksFailed.Inc()
 			w.store.ExecTx(ctx, func(txStore *store.Store) error {
 				return w.store.Task.HandleFailure(ctx, task, err.Error())
 			})
 		} else {
-			metrics.TasksPending.Inc()
 			w.store.ExecTx(ctx, func(txStore *store.Store) error {
 				msg := err.Error()
 				task.LastError = &msg
@@ -127,7 +120,6 @@ func (w *Worker) processOnce(ctx context.Context) {
 		}
 		return
 	}
-	metrics.TasksCompleted.Inc()
 	w.store.ExecTx(ctx, func(txStore *store.Store) error {
 		return w.store.Task.HandleSuccess(ctx, task)
 	})

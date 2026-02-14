@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/joho/godotenv"
 	"github.com/samualhalder/task-queue-go/internal/app"
 	"github.com/samualhalder/task-queue-go/internal/auth"
@@ -16,9 +18,10 @@ import (
 func main() {
 	metrics.Register()
 
-	err := godotenv.Load()
-	if err != nil {
-		panic("error while loading env")
+	if os.Getenv("ENV") != "docker" {
+		if err := godotenv.Load(); err != nil {
+			panic("error while loading env")
+		}
 	}
 
 	cnf := app.Config{
