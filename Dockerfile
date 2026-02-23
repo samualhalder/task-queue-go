@@ -11,7 +11,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api ./cmd/api
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o worker ./cmd/worker
-
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o adminctl ./cmd/adminctl
 
 # ---------- Runtime Stage ----------
 FROM alpine:latest
@@ -21,3 +21,4 @@ RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/api .
 COPY --from=builder /app/worker .
+COPY --from=builder /app/adminctl .
