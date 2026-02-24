@@ -40,7 +40,7 @@ func (t *TaskRateLimitStore) AllowTx(
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 
-			return false, nil
+			return true, nil
 		}
 		return false, err
 	}
